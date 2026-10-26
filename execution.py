@@ -30,7 +30,7 @@ for vulnerability in vulnerabilities:
     print("Description:", vulnerability["message"])
 
     print("\n" + "=" * 50)
-    print("OPENAI ANALYSIS")
+    print("GROQ AI ANALYSIS")
     print("=" * 50)
 
     try:
@@ -41,5 +41,6 @@ for vulnerability in vulnerabilities:
 
         print(analysis)
 
-    except Exception as error:
-        print("Gemini analysis failed:", error)
+    except Exception as exc:
+        print(f"Groq analysis unavailable: "
+              f"{str(exc).splitlines()[0][:200]}")

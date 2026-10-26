@@ -3,112 +3,386 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VulnSightAI | Python Security Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">   
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
-    <title>AI + Semgrep Vulnerability Detector</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
+    <div class="app-layout">
 
-    <div class="container">
-
-        <header>
-            <h1>AI + Semgrep Vulnerability Detector</h1>
-            <p>
-                Upload Python source code to identify potential
-                security vulnerabilities using Semgrep and Gemini AI.
-            </p>
-        </header>
-
-        <section class="upload-section">
-
-            <h2>Upload Source Code</h2>
-
-            <form method="POST"
-                  enctype="multipart/form-data">
-
-                <input type="file"
-                       name="file"
-                       accept=".py"
-                       required>
-
-                <button type="submit">
-                    Scan for Vulnerabilities
-                </button>
-
-            </form>
-
-        </section>
-
-        {% if error %}
-        <div class="error">
-            {{ error }}
-        </div>
-        {% endif %}
-
-        {% if filename %}
-        <section class="results-section">
-
-            <h2>Scan Results: {{ filename }}</h2>
-
-            <p>
-                Total vulnerabilities detected:
-                <strong>{{ results|length }}</strong>
-            </p>
-
-            {% if results %}
-
-                {% for vulnerability in results %}
-
-                <div class="vulnerability-card">
-
-                    <h3>{{ vulnerability.category }}</h3>
-
-                    <p>
-                        <strong>Severity:</strong>
-                        {{ vulnerability.severity }}
-                    </p>
-
-                    <p>
-                        <strong>Line:</strong>
-                        {{ vulnerability.line }}
-                    </p>
-
-                    <p>
-                        <strong>Semgrep Description:</strong>
-                        {{ vulnerability.message }}
-                    </p>
-
-                    <div class="ai-section">
-
-                        <h4>Gemini AI Analysis</h4>
-
-                        <p class="ai-text">
-                            {{ vulnerability.ai_analysis }}
-                        </p>
-
-                    </div>
-
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <a href="#dashboard" class="brand">
+                <div class="brand-icon">S</div>
+                <div>
+                    <span class="brand-name">VulnSightAI</span>
+                    <span class="brand-subtitle">Code Security Analyzer</span>
                 </div>
+            </a>
 
-                {% endfor %}
+        
 
-            {% elif not error %}
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="nav-link active">
+                    <span class="nav-icon">⌂</span>
+                    Dashboard
+                </a>
+                <a href="#upload" class="nav-link">
+                    <span class="nav-icon">↑</span>
+                    New Scan
+                </a>
+                <a href="#results" class="nav-link">
+                    <span class="nav-icon">◎</span>
+                    Scan Results
+                </a>
+            </nav>
 
-                <div class="success">
-                    No vulnerabilities detected by Semgrep.
+            <div class="sidebar-bottom">
+                <div class="sidebar-status">
+                    <span class="status-dot"></span>
+                    <span>Local environment</span>
                 </div>
+                <p class="sidebar-caption">Semgrep + AI Analysis</p>
+            </div>
+        </aside>
 
+        <!-- Main content -->
+        <main class="main-content" id="dashboard">
+
+            <!-- Top bar -->
+            <div class="topbar">
+                <div class="topbar-status">
+                    <span class="status-dot"></span>
+                    Local scanner
+                </div>
+            </div>
+
+            <!-- Page heading -->
+            <header class="page-header">
+                <div>
+                    <p class="eyebrow">SOURCE CODE SECURITY</p>
+                    <h1>Python Security Dashboard</h1>
+                    <p class="page-description">
+                        Identify potential vulnerabilities, understand their risks,
+                        and prioritize the findings that need attention.
+                    </p>
+                </div>
+                <a href="#upload" class="primary-button heading-button">
+                    <span>＋</span> New Scan
+                </a>
+            </header>
+
+            <!-- Error message -->
+            {% if error %}
+            <div class="alert alert-error" role="alert">
+                <span class="alert-icon">!</span>
+                <div>
+                    <strong>Scan could not be completed</strong>
+                    <p>{{ error }}</p>
+                </div>
+            </div>
             {% endif %}
 
-        </section>
-        {% endif %}
+            <!-- Summary cards -->
+            <section class="summary-grid" aria-label="Scan summary">
 
+                <article class="summary-card">
+                    <div class="summary-card-top">
+                        <span class="summary-label">Total Findings</span>
+                        <span class="summary-icon icon-blue">◎</span>
+                    </div>
+                    <div class="summary-value">
+                        {{ results|length }}
+                    </div>
+                    <p class="summary-note">Findings in this scan</p>
+                </article>
+
+                <article class="summary-card">
+                    <div class="summary-card-top">
+                        <span class="summary-label">Critical / High</span>
+                        <span class="summary-icon icon-red">!</span>
+                    </div>
+                    <div class="summary-value">
+                        {{ results|selectattr('severity', 'equalto', 'CRITICAL')|list|length
+                           + results|selectattr('severity', 'equalto', 'HIGH')|list|length }}
+                    </div>
+                    <p class="summary-note">Highest-priority findings</p>
+                </article>
+
+                <article class="summary-card">
+                    <div class="summary-card-top">
+                        <span class="summary-label">Medium</span>
+                        <span class="summary-icon icon-orange">↗</span>
+                    </div>
+                    <div class="summary-value">
+                        {{ results|selectattr('severity', 'equalto', 'MEDIUM')|list|length }}
+                    </div>
+                    <p class="summary-note">Needs review</p>
+                </article>
+
+                <article class="summary-card">
+                    <div class="summary-card-top">
+                        <span class="summary-label">AI Completed</span>
+                        <span class="summary-icon icon-teal">✓</span>
+                    </div>
+                    <div class="summary-value">
+                        {{ results|selectattr('ai_status', 'equalto', 'complete')|list|length }}
+                    </div>
+                    <p class="summary-note">Findings analyzed by AI</p>
+                </article>
+
+            </section>
+
+            <!-- Upload section -->
+            <section class="panel upload-panel" id="upload">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">GET STARTED</p>
+                        <h2>Scan your source code</h2>
+                        <p class="section-description">
+                            Upload a Python file to run static analysis and AI-assisted review.
+                        </p>
+                    </div>
+                    <span class="panel-icon">↑</span>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data" class="upload-form">
+                    <label for="file" class="upload-dropzone">
+                        <span class="upload-icon">↑</span>
+                        <span class="upload-title">Choose a Python file</span>
+                        <span class="upload-description">
+                            Select a .py file from your computer
+                        </span>
+                        <span class="file-requirement">Python files only · Maximum 1 MB</span>
+                        <input
+                            type="file"
+                            name="file"
+                            id="file"
+                            accept=".py"
+                            required
+                        >
+                        <span class="selected-file" id="selected-file">
+                            No file selected
+                        </span>
+                    </label>
+
+                    <div class="upload-actions">
+                        <p class="upload-help">
+                            Your file is scanned in a temporary local directory.
+                        </p>
+                        <button type="submit" class="primary-button">
+                            Run Security Scan <span>→</span>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Scan results -->
+            <section class="results-section" id="results">
+                <div class="results-header">
+                    <div>
+                        <p class="eyebrow">ANALYSIS REPORT</p>
+                        <h2>Scan Results</h2>
+                        <p class="section-description">
+                            Review findings, compare severity assessments, and inspect AI explanations.
+                        </p>
+                    </div>
+
+                    {% if filename %}
+                    <span class="file-pill">
+                        <span class="file-pill-icon">PY</span>
+                        {{ filename }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if filename and not error %}
+
+                    <div class="scan-overview">
+                        <div>
+                            <span class="overview-label">File analyzed</span>
+                            <strong>{{ filename }}</strong>
+                        </div>
+                        <div>
+                            <span class="overview-label">Findings returned</span>
+                            <strong>{{ results|length }}</strong>
+                        </div>
+                        <div>
+                            <span class="overview-label">Prioritization</span>
+                            <strong>Highest risk first</strong>
+                        </div>
+                    </div>
+
+                    {% if results %}
+
+                    <div class="findings-list">
+                        {% for vulnerability in results %}
+                        <article class="finding-card">
+
+                            <div class="finding-top">
+                                <div class="finding-title-group">
+                                    <span class="finding-number">
+                                        {{ "%02d"|format(loop.index) }}
+                                    </span>
+                                    <div>
+                                        <h3>
+                                            {{ vulnerability.category or "Security Finding" }}
+                                        </h3>
+                                        <p class="finding-rule">
+                                            {{ vulnerability.rule or "Semgrep rule unavailable" }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <span class="severity-badge severity-{{ (vulnerability.severity or 'unknown')|lower }}">
+                                    {{ vulnerability.severity or "UNKNOWN" }}
+                                </span>
+                            </div>
+
+                            <p class="finding-description">
+                                {{ vulnerability.message or "No description provided." }}
+                            </p>
+
+                            <div class="finding-meta">
+                                <span class="meta-item">
+                                    <span class="meta-icon">⌖</span>
+                                    Line {{ vulnerability.line if vulnerability.line is not none else "N/A" }}
+                                </span>
+                                <span class="meta-item">
+                                    <span class="meta-icon">▤</span>
+                                    {{ vulnerability.file or filename }}
+                                </span>
+                            </div>
+
+                            <!-- Severity comparison -->
+                            <div class="severity-comparison">
+                                <div class="comparison-item">
+                                    <span class="comparison-label">
+                                        Original Semgrep severity
+                                    </span>
+                                    <span class="assessment-badge">
+                                        {{ vulnerability.semgrep_raw_severity or "UNKNOWN" }}
+                                    </span>
+                                 </div>
+
+                            <div class="comparison-item">
+                                <span class="comparison-label">
+                                    Dashboard severity
+                                </span>
+                                <span class="severity-badge severity-{{ (vulnerability.semgrep_severity or 'unknown')|lower }}">
+                                {{ vulnerability.semgrep_severity or "UNKNOWN" }}
+                                </span>
+                            </div>
+
+                            <div class="comparison-item">
+                                <span class="comparison-label">AI assessment</span>
+                                <span class="assessment-badge">
+                                    {% if vulnerability.ai_status == "complete" %}
+                                        {{ (vulnerability.ai_assessment or "Uncertain")|replace("_", " ")|title }}
+                                    {% else %}
+                                        Not available
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            <div class="comparison-item">
+                                <span class="comparison-label">AI-assessed severity</span>
+                                    {% if vulnerability.ai_status == "complete" and vulnerability.ai_severity %}
+                                <span class="severity-badge severity-{{ vulnerability.ai_severity|lower }}">
+                                    {{ vulnerability.ai_severity }}
+                                </span>
+                                    {% else %}
+                                <span class="assessment-badge">Not assessed</span>
+                                    {% endif %}
+                            </div>
+                        </div>
+
+                            <!-- AI analysis -->
+                            <div class="ai-panel">
+                                <div class="ai-panel-header">
+                                    <div class="ai-heading">
+                                        <span class="ai-icon">AI</span>
+                                        <div>
+                                            <h4>AI Security Analysis</h4>
+                                            <p>Interpretation and recommended next steps</p>
+                                        </div>
+                                    </div>
+
+                                    {% if vulnerability.ai_status == "complete" %}
+                                    <span class="ai-status status-complete">
+                                        <span class="status-dot"></span>
+                                        Analysis complete
+                                    </span>
+                                    {% else %}
+                                    <span class="ai-status status-unavailable">
+                                        <span class="status-dot"></span>
+                                        AI unavailable
+                                    </span>
+                                    {% endif %}
+                                </div>
+
+                                <p class="ai-explanation">{{ vulnerability.ai_analysis or "No AI analysis is available for this finding." }}</p>
+                            </div>
+
+                        </article>
+                        {% endfor %}
+                    </div>
+
+                    {% else %}
+                    <div class="empty-state success-state">
+                        <div class="empty-state-icon">✓</div>
+                        <h3>No findings returned</h3>
+                        <p>
+                            Semgrep completed the scan and returned no findings
+                            for the configured rules. This does not guarantee
+                            that the file is free of vulnerabilities.
+                        </p>
+                    </div>
+                    {% endif %}
+
+                {% elif not error %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⌕</div>
+                        <h3>Your scan results will appear here</h3>
+                        <p>
+                            Upload a Python file and run a scan to see
+                            vulnerability findings, severity comparisons,
+                            and AI-assisted explanations.
+                        </p>
+                        <a href="#upload" class="secondary-button">Upload a file</a>
+                    </div>
+                {% endif %}
+            </section>
+
+            <!-- Footer -->
+            <footer class="page-footer">
+                <span>VulnSight AI</span>
+                <span>See the risk. Secure the code.</span>
+            </footer>
+
+        </main>
     </div>
 
+    <script>
+        const fileInput = document.getElementById("file");
+        const selectedFile = document.getElementById("selected-file");
+
+        if (fileInput && selectedFile) {
+            fileInput.addEventListener("change", function () {
+                if (this.files && this.files.length > 0) {
+                    selectedFile.textContent = this.files[0].name;
+                    selectedFile.classList.add("file-selected");
+                } else {
+                    selectedFile.textContent = "No file selected";
+                    selectedFile.classList.remove("file-selected");
+                }
+            });
+        }
+    </script>
 </body>
 </html>
