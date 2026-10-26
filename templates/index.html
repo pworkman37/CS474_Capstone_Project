@@ -1,0 +1,114 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>AI + Semgrep Vulnerability Detector</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <header>
+            <h1>AI + Semgrep Vulnerability Detector</h1>
+            <p>
+                Upload Python source code to identify potential
+                security vulnerabilities using Semgrep and Gemini AI.
+            </p>
+        </header>
+
+        <section class="upload-section">
+
+            <h2>Upload Source Code</h2>
+
+            <form method="POST"
+                  enctype="multipart/form-data">
+
+                <input type="file"
+                       name="file"
+                       accept=".py"
+                       required>
+
+                <button type="submit">
+                    Scan for Vulnerabilities
+                </button>
+
+            </form>
+
+        </section>
+
+        {% if error %}
+        <div class="error">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        {% if filename %}
+        <section class="results-section">
+
+            <h2>Scan Results: {{ filename }}</h2>
+
+            <p>
+                Total vulnerabilities detected:
+                <strong>{{ results|length }}</strong>
+            </p>
+
+            {% if results %}
+
+                {% for vulnerability in results %}
+
+                <div class="vulnerability-card">
+
+                    <h3>{{ vulnerability.category }}</h3>
+
+                    <p>
+                        <strong>Severity:</strong>
+                        {{ vulnerability.severity }}
+                    </p>
+
+                    <p>
+                        <strong>Line:</strong>
+                        {{ vulnerability.line }}
+                    </p>
+
+                    <p>
+                        <strong>Semgrep Description:</strong>
+                        {{ vulnerability.message }}
+                    </p>
+
+                    <div class="ai-section">
+
+                        <h4>Gemini AI Analysis</h4>
+
+                        <p class="ai-text">
+                            {{ vulnerability.ai_analysis }}
+                        </p>
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            {% elif not error %}
+
+                <div class="success">
+                    No vulnerabilities detected by Semgrep.
+                </div>
+
+            {% endif %}
+
+        </section>
+        {% endif %}
+
+    </div>
+
+</body>
+</html>
